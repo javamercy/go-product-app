@@ -1,8 +1,14 @@
 package main
 
-import "fmt"
+import (
+	"github.com/labstack/echo/v4"
+)
 
 func main() {
 
-	fmt.Println("Hello world")
+	e := echo.New()
+	err := e.Start("localhost:8080")
+	if err != nil {
+		panic(err)
+	}
 }
