@@ -1,0 +1,61 @@
+package infrastructure
+
+import (
+	"context"
+	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/stretchr/testify/assert"
+	"go-product-app/common/postgresql"
+	"go-product-app/domain"
+	"go-product-app/persistence"
+	"os"
+	"testing"
+)
+
+var productRepository persistence.ProductRepository
+var dbPool *pgxpool.Pool
+var ctx context.Context
+
+func TestMain(m *testing.M) {
+	ctx = context.Background()
+	dbPool = postgresql.GetConnectionPool(ctx, postgresql.Config{
+		Host:                  "localhost",
+		Port:                  "6432",
+		UserName:              "postgres",
+		Password:              "postgres",
+		DatabaseName:          "productapp",
+		MaxConnections:        "10",
+		MaxConnectionIdleTime: "30s",
+	})
+
+	productRepository = persistence.NewProductRepository(dbPool)
+	fmt.Println("Before all tests")
+	code := m.Run()
+	fmt.Println("After all tests")
+	os.Exit(code)
+}
+
+func setup(ctx context.Context, dbPool *pgxpool.Pool) {
+	TestDataInitialize(ctx, dbPool)
+}
+
+func clear(ctx context.Context, dbPool *pgxpool.Pool) {
+	TruncateTestData(ctx, dbPool)
+}
+
+func TestGetAllProducts(t *testing.T) {
+
+	expectedProducts := []domain.Product{
+		{Id: 1, Name: "Oven", Price: 1000.0, Discount: 10.0, Store: "A TECH"},
+		{Id: 2, Name: "Refrigerator", Price: 2000.0, Discount: 20.0, Store: "A TECH"},
+		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B TECH"},
+		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B TECH"},
+	}
+	setup(ctx, dbPool)
+	t.Run("GetAllProducts", func(t *testing.T) {
+		actualProducts := productRepository.GetAll()
+		assert.Equal(t, len(expectedProducts), len(actualProducts))
+		assert.Equal(t, expectedProducts, actualProducts)
+	})
+	clear(ctx, dbPool)
+}

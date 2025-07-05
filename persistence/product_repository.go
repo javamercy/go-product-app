@@ -15,9 +15,13 @@ type PostgresProductRepository struct {
 	dbPool *pgxpool.Pool
 }
 
+func NewProductRepository(dbPool *pgxpool.Pool) ProductRepository {
+	return &PostgresProductRepository{dbPool: dbPool}
+}
+
 func (productRepository *PostgresProductRepository) GetAll() []domain.Product {
 	ctx := context.Background()
-	rows, err := productRepository.dbPool.Query(ctx, "select * from product")
+	rows, err := productRepository.dbPool.Query(ctx, "select * from products")
 
 	if err != nil {
 		log.Error("Error while fetching products: %v", err)

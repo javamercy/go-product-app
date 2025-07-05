@@ -13,6 +13,7 @@ func GetConnectionPool(context context.Context, config Config) *pgxpool.Pool {
 		config.Host,
 		config.Port,
 		config.UserName,
+		config.Password,
 		config.DatabaseName,
 		config.MaxConnections,
 		config.MaxConnectionIdleTime,
