@@ -95,3 +95,23 @@ func TestAddProduct(t *testing.T) {
 
 	clear(ctx, dbPool)
 }
+
+func TestGetProductById(t *testing.T) {
+	setup(ctx, dbPool)
+
+	expectedProduct := domain.Product{
+		Id: 1, Name: "Oven", Price: 1000.0, Discount: 10.0, Store: "A_TECH",
+	}
+
+	expectedErr := "Product with id 5 not found"
+
+	t.Run("GetProductById", func(t *testing.T) {
+		actualProduct, _ := productRepository.GetById(1)
+		_, actualErr := productRepository.GetById(5)
+
+		assert.Equal(t, expectedProduct, actualProduct)
+		assert.Equal(t, expectedErr, actualErr.Error())
+	})
+
+	clear(ctx, dbPool)
+}

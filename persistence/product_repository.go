@@ -2,16 +2,20 @@ package persistence
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/gommon/log"
 	"go-product-app/domain"
+	"go-product-app/persistence/common"
 )
 
 type ProductRepository interface {
 	GetAll() []domain.Product
 	GetAllByStore(storeName string) []domain.Product
 	Add(product domain.Product) error
+	GetById(productId int64) (domain.Product, error)
 }
 
 type PostgresProductRepository struct {
@@ -59,6 +63,36 @@ func (productRepository *PostgresProductRepository) Add(product domain.Product) 
 	}
 
 	return nil
+}
+
+func (productRepository *PostgresProductRepository) GetById(productId int64) (domain.Product, error) {
+
+	sql := `select * from products where id = $1`
+	row := productRepository.dbPool.QueryRow(context.Background(), sql, productId)
+
+	var id int64
+	var name string
+	var price float64
+	var discount float64
+	var store string
+
+	err := row.Scan(&id, &name, &price, &discount, &store)
+
+	if err != nil && err.Error() == common.NOT_FOUND {
+		log.Error(err)
+		return domain.Product{}, errors.New(fmt.Sprintf("Product with id %v not found", productId))
+	}
+
+	product := domain.Product{
+		Id:       id,
+		Name:     name,
+		Price:    price,
+		Discount: discount,
+		Store:    store,
+	}
+
+	return product, nil
+
 }
 
 func extractProductsFromRows(rows pgx.Rows) []domain.Product {
