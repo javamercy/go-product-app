@@ -46,10 +46,10 @@ func clear(ctx context.Context, dbPool *pgxpool.Pool) {
 func TestGetAllProducts(t *testing.T) {
 
 	expectedProducts := []domain.Product{
-		{Id: 1, Name: "Oven", Price: 1000.0, Discount: 10.0, Store: "A TECH"},
-		{Id: 2, Name: "Refrigerator", Price: 2000.0, Discount: 20.0, Store: "A TECH"},
-		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B TECH"},
-		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B TECH"},
+		{Id: 1, Name: "Oven", Price: 1000.0, Discount: 10.0, Store: "A_TECH"},
+		{Id: 2, Name: "Refrigerator", Price: 2000.0, Discount: 20.0, Store: "A_TECH"},
+		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
+		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B_TECH"},
 	}
 	setup(ctx, dbPool)
 	t.Run("GetAllProducts", func(t *testing.T) {
@@ -57,5 +57,41 @@ func TestGetAllProducts(t *testing.T) {
 		assert.Equal(t, len(expectedProducts), len(actualProducts))
 		assert.Equal(t, expectedProducts, actualProducts)
 	})
+	clear(ctx, dbPool)
+}
+
+func TestGetAllProductsByStore(t *testing.T) {
+	expectedProducts := []domain.Product{
+		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
+		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B_TECH"},
+	}
+	setup(ctx, dbPool)
+	t.Run("GetAllProductsByStore", func(t *testing.T) {
+		actualProducts := productRepository.GetAllByStore("B_TECH")
+		assert.Equal(t, len(expectedProducts), len(actualProducts))
+		assert.Equal(t, expectedProducts, actualProducts)
+	})
+
+	clear(ctx, dbPool)
+}
+
+func TestAddProduct(t *testing.T) {
+	product := domain.Product{
+		Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH",
+	}
+	expectedProducts :=
+		[]domain.Product{
+			{Id: 1, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
+		}
+
+	t.Run("AddProduct", func(t *testing.T) {
+
+		productRepository.Add(product)
+		actualProducts := productRepository.GetAll()
+		assert.Equal(t, len(expectedProducts), len(actualProducts))
+		assert.Equal(t, expectedProducts, actualProducts)
+
+	})
+
 	clear(ctx, dbPool)
 }

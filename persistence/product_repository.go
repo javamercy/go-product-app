@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/gommon/log"
 	"go-product-app/domain"
@@ -9,6 +10,8 @@ import (
 
 type ProductRepository interface {
 	GetAll() []domain.Product
+	GetAllByStore(storeName string) []domain.Product
+	Add(product domain.Product) error
 }
 
 type PostgresProductRepository struct {
@@ -28,6 +31,37 @@ func (productRepository *PostgresProductRepository) GetAll() []domain.Product {
 		return []domain.Product{}
 	}
 
+	return extractProductsFromRows(rows)
+}
+
+func (productRepository *PostgresProductRepository) GetAllByStore(storeName string) []domain.Product {
+	sql := `select * from products where Store = $1`
+
+	rows, err := productRepository.dbPool.Query(context.Background(), sql, storeName)
+
+	if err != nil {
+		log.Error("error while running GetAllByStore:", err)
+		return []domain.Product{}
+	}
+
+	return extractProductsFromRows(rows)
+
+}
+
+func (productRepository *PostgresProductRepository) Add(product domain.Product) error {
+	sql := `insert into products (name, price, discount, store) values ($1, $2, $3, $4)`
+
+	_, err := productRepository.dbPool.Exec(context.Background(), sql, product.Name, product.Price, product.Discount, product.Store)
+
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func extractProductsFromRows(rows pgx.Rows) []domain.Product {
 	var products []domain.Product
 	var id int64
 	var name string
@@ -39,7 +73,7 @@ func (productRepository *PostgresProductRepository) GetAll() []domain.Product {
 		err := rows.Scan(&id, &name, &price, &discount, &store)
 
 		if err != nil {
-			log.Error("Error while scanning products: %v", err)
+			log.Error(err)
 		} else {
 			products = append(products, domain.Product{
 				Id:       id,
@@ -50,6 +84,5 @@ func (productRepository *PostgresProductRepository) GetAll() []domain.Product {
 			})
 		}
 	}
-
 	return products
 }
