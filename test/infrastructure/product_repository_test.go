@@ -115,3 +115,29 @@ func TestGetProductById(t *testing.T) {
 
 	clear(ctx, dbPool)
 }
+
+func TestUpdateProduct(t *testing.T) {
+	setup(ctx, dbPool)
+
+	product := domain.Product{
+		Id: 1, Name: "Updated Product", Price: 1999.0, Discount: 0.0, Store: "A_TECH",
+	}
+
+	t.Run("UpdateProduct", func(t *testing.T) {
+		productRepository.Update(product)
+		actualProduct, _ := productRepository.GetById(product.Id)
+		assert.Equal(t, product, actualProduct)
+	})
+
+	clear(ctx, dbPool)
+
+}
+
+func TestDeleteProductById(t *testing.T) {
+	setup(ctx, dbPool)
+	productToDelete, _ := productRepository.GetById(1)
+	assert.NotNil(t, productToDelete)
+	productRepository.DeleteById(productToDelete.Id)
+	deletedProduct, _ := productRepository.GetById(productToDelete.Id)
+	assert.Equal(t, domain.Product{}, deletedProduct)
+}

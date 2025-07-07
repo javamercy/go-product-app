@@ -16,6 +16,8 @@ type ProductRepository interface {
 	GetAllByStore(storeName string) []domain.Product
 	Add(product domain.Product) error
 	GetById(productId int64) (domain.Product, error)
+	Update(product domain.Product) error
+	DeleteById(productId int64) error
 }
 
 type PostgresProductRepository struct {
@@ -93,6 +95,38 @@ func (productRepository *PostgresProductRepository) GetById(productId int64) (do
 
 	return product, nil
 
+}
+
+func (productRepository *PostgresProductRepository) Update(product domain.Product) error {
+
+	sql := `update products set name = $1, price = $2, discount = $3, store = $4 where id = $5`
+
+	_, err := productRepository.dbPool.Exec(context.Background(), sql,
+		product.Name,
+		product.Price,
+		product.Discount,
+		product.Store,
+		product.Id)
+
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func (productRepository *PostgresProductRepository) DeleteById(productId int64) error {
+	sql := `delete from products where id = $1`
+
+	_, err := productRepository.dbPool.Exec(context.Background(), sql, productId)
+
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
 }
 
 func extractProductsFromRows(rows pgx.Rows) []domain.Product {
