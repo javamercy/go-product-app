@@ -14,7 +14,7 @@ import (
 type ProductRepository interface {
 	GetAll() []domain.Product
 	GetAllByStore(storeName string) []domain.Product
-	Add(product domain.Product) error
+	Add(product domain.Product) (domain.Product, error)
 	GetById(productId int64) (domain.Product, error)
 	Update(product domain.Product) error
 	DeleteById(productId int64) error
@@ -54,17 +54,28 @@ func (productRepository *PostgresProductRepository) GetAllByStore(storeName stri
 
 }
 
-func (productRepository *PostgresProductRepository) Add(product domain.Product) error {
+func (productRepository *PostgresProductRepository) Add(product domain.Product) (domain.Product, error) {
 	sql := `insert into products (name, price, discount, store) values ($1, $2, $3, $4)`
 
-	_, err := productRepository.dbPool.Exec(context.Background(), sql, product.Name, product.Price, product.Discount, product.Store)
+	var id int64
+	err := productRepository.dbPool.QueryRow(context.Background(), sql,
+		product.Name,
+		product.Price,
+		product.Discount,
+		product.Store).Scan(&id)
 
 	if err != nil {
 		log.Error(err)
-		return err
+		return domain.Product{}, err
 	}
 
-	return nil
+	return domain.Product{
+		Id:       id,
+		Name:     product.Name,
+		Price:    product.Price,
+		Discount: product.Discount,
+		Store:    product.Store,
+	}, nil
 }
 
 func (productRepository *PostgresProductRepository) GetById(productId int64) (domain.Product, error) {

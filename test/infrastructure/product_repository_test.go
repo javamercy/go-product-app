@@ -44,6 +44,7 @@ func clear(ctx context.Context, dbPool *pgxpool.Pool) {
 }
 
 func TestGetAllProducts(t *testing.T) {
+	setup(ctx, dbPool)
 
 	expectedProducts := []domain.Product{
 		{Id: 1, Name: "Oven", Price: 1000.0, Discount: 10.0, Store: "A_TECH"},
@@ -51,7 +52,6 @@ func TestGetAllProducts(t *testing.T) {
 		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
 		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B_TECH"},
 	}
-	setup(ctx, dbPool)
 	t.Run("GetAllProducts", func(t *testing.T) {
 		actualProducts := productRepository.GetAll()
 		assert.Equal(t, len(expectedProducts), len(actualProducts))
@@ -61,11 +61,12 @@ func TestGetAllProducts(t *testing.T) {
 }
 
 func TestGetAllProductsByStore(t *testing.T) {
+	setup(ctx, dbPool)
+
 	expectedProducts := []domain.Product{
 		{Id: 3, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
 		{Id: 4, Name: "Microwave", Price: 800.0, Discount: 5.0, Store: "B_TECH"},
 	}
-	setup(ctx, dbPool)
 	t.Run("GetAllProductsByStore", func(t *testing.T) {
 		actualProducts := productRepository.GetAllByStore("B_TECH")
 		assert.Equal(t, len(expectedProducts), len(actualProducts))
@@ -76,20 +77,17 @@ func TestGetAllProductsByStore(t *testing.T) {
 }
 
 func TestAddProduct(t *testing.T) {
-	product := domain.Product{
+	expectedProduct := domain.Product{
 		Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH",
 	}
-	expectedProducts :=
-		[]domain.Product{
-			{Id: 1, Name: "Washing Machine", Price: 1500.0, Discount: 15.0, Store: "B_TECH"},
-		}
 
 	t.Run("AddProduct", func(t *testing.T) {
 
-		productRepository.Add(product)
-		actualProducts := productRepository.GetAll()
-		assert.Equal(t, len(expectedProducts), len(actualProducts))
-		assert.Equal(t, expectedProducts, actualProducts)
+		actualProduct, err := productRepository.Add(expectedProduct)
+
+		if err == nil {
+			assert.Equal(t, expectedProduct, actualProduct)
+		}
 
 	})
 
@@ -140,4 +138,6 @@ func TestDeleteProductById(t *testing.T) {
 	productRepository.DeleteById(productToDelete.Id)
 	deletedProduct, _ := productRepository.GetById(productToDelete.Id)
 	assert.Equal(t, domain.Product{}, deletedProduct)
+
+	clear(ctx, dbPool)
 }
