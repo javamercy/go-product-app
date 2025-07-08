@@ -2,16 +2,18 @@ package service
 
 import (
 	"errors"
-	"go-product-app/common/response"
+	commonResponse "go-product-app/common/response"
 	"go-product-app/domain"
 	"go-product-app/persistence"
-	"go-product-app/service/dto"
+	"go-product-app/service/helper"
+	serviceRequest "go-product-app/service/request"
+	serviceResponse "go-product-app/service/response"
 )
 
 type ProductService interface {
-	GetAll(request dto.GetAllProductsRequest) response.ListResponse[dto.GetAllProductsResponse]
+	GetAll(request serviceRequest.GetAllProductsRequest) commonResponse.ListResponse[serviceResponse.GetAllProductsResponse]
 	GetAllByStore(storeName string) []domain.Product
-	Add(request dto.AddProductRequest) (dto.AddedProductResponse, error)
+	Add(request serviceRequest.AddProductRequest) (serviceResponse.AddedProductResponse, error)
 	GetById(productId int64) (domain.Product, error)
 	Update(product domain.Product) error
 	DeleteById(productId int64) error
@@ -25,14 +27,14 @@ type ProductManager struct {
 	productRepository persistence.ProductRepository
 }
 
-func (productManager *ProductManager) GetAll(request dto.GetAllProductsRequest) response.ListResponse[dto.GetAllProductsResponse] {
+func (productManager *ProductManager) GetAll(request serviceRequest.GetAllProductsRequest) commonResponse.ListResponse[serviceResponse.GetAllProductsResponse] {
 	products := productManager.productRepository.GetAll()
 
-	var getAllProductsResponse response.ListResponse[dto.GetAllProductsResponse]
+	var getAllProductsResponse commonResponse.ListResponse[serviceResponse.GetAllProductsResponse]
 
 	for _, product := range products {
 
-		getAllProductsResponse.Items = append(getAllProductsResponse.Items, dto.GetAllProductsResponse{
+		getAllProductsResponse.Items = append(getAllProductsResponse.Items, serviceResponse.GetAllProductsResponse{
 			Id:       product.Id,
 			Name:     product.Name,
 			Store:    product.Store,
@@ -50,34 +52,23 @@ func (productManager *ProductManager) GetAllByStore(storeName string) []domain.P
 	panic("implement me")
 }
 
-func (productManager *ProductManager) Add(request dto.AddProductRequest) (dto.AddedProductResponse, error) {
+func (productManager *ProductManager) Add(request serviceRequest.AddProductRequest) (serviceResponse.AddedProductResponse, error) {
 
 	err := discountCannotExceedSeventy(request.Discount)
 
 	if err != nil {
-		return dto.AddedProductResponse{}, err
+		return serviceResponse.AddedProductResponse{}, err
 	}
 
-	product := domain.Product{
-		Name:     request.Name,
-		Price:    request.Price,
-		Discount: request.Discount,
-		Store:    request.Store,
-	}
+	product := helper.ToProduct(request)
 
 	response, err := productManager.productRepository.Add(product)
 
 	if err != nil {
-		return dto.AddedProductResponse{}, err
+		return serviceResponse.AddedProductResponse{}, err
 	}
 
-	return dto.AddedProductResponse{
-		Id:       response.Id,
-		Name:     response.Name,
-		Price:    response.Price,
-		Discount: response.Discount,
-		Store:    request.Store,
-	}, nil
+	return helper.ToAddedProductResponse(response), nil
 }
 
 func (productManager *ProductManager) GetById(productId int64) (domain.Product, error) {

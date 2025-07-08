@@ -3,7 +3,7 @@ package service
 import (
 	"go-product-app/domain"
 	"go-product-app/service"
-	"go-product-app/service/dto"
+	"go-product-app/service/request"
 	"os"
 	"testing"
 )
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 
 func Test_ShouldGetAllProducts(t *testing.T) {
 	t.Run("ShouldGetAllProducts", func(t *testing.T) {
-		actualProducts := productService.GetAll(dto.GetAllProductsRequest{})
+		actualProducts := productService.GetAll(request.GetAllProductsRequest{})
 		if len(actualProducts.Items) != 2 {
 			t.Errorf("expected 2 products, got %d", len(actualProducts.Items))
 		}
@@ -39,7 +39,7 @@ func Test_ShouldGetAllProducts(t *testing.T) {
 
 func Test_ShouldAddProduct(t *testing.T) {
 	t.Run("ShouldAddProduct", func(t *testing.T) {
-		addReq := dto.AddProductRequest{
+		addReq := request.AddProductRequest{
 			Name:     "Toaster",
 			Price:    500.0,
 			Discount: 10.0,
@@ -53,14 +53,14 @@ func Test_ShouldAddProduct(t *testing.T) {
 			t.Errorf("added product does not match request: %+v", addedProduct)
 		}
 		// Check if product count increased
-		allProducts := productService.GetAll(dto.GetAllProductsRequest{})
+		allProducts := productService.GetAll(request.GetAllProductsRequest{})
 		if len(allProducts.Items) != 3 {
 			t.Errorf("expected 3 products after add, got %d", len(allProducts.Items))
 		}
 	})
 
 	t.Run("ShouldReturnErrorWhenDiscountExceedsSeventy", func(t *testing.T) {
-		addReq := dto.AddProductRequest{
+		addReq := request.AddProductRequest{
 			Name:     "Microwave",
 			Price:    800.0,
 			Discount: 75.0,
